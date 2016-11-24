@@ -19,6 +19,7 @@ vmcloak:
   dns: 8.8.8.8
   isomountdir: /mnt
   workingdir: /srv/iso
+  iso_fstype:
 
 office:
   '2007': XXXXX-XXXXX-XXXXX-XXXXX-XXXXX
