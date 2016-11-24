@@ -1,0 +1,6 @@
+*.ISO
+*.iso
+*.zip
+*.swp
+.DS_Store
+*.tar.gz
