@@ -55,6 +55,65 @@ cuckoo_pip:
       - cmd: pip
 
 # Cuckoo-specific setup instructions, refer to the documentation.
+
+# Patches for Ubuntu 16.04
+{% if salt['grains.get']('oscodename') == 'xenial' %}
+apparmor-utils:
+  pkg.installed:
+    - require:
+      - pkg: cuckoo_dependencies
+
+disable_aa_tcpdump:
+  cmd.run:
+    - name: aa-disable /usr/sbin/tcpdump
+    - runas: root
+    - onlyif: '/usr/sbin/aa-status | /bin/grep "/usr/sbin/tcpdump"'
+    - require:
+      - pkg: apparmor-utils
+
+tcpdump_perms:
+  file.managed:
+    - name: /usr/sbin/tcpdump
+    - user: root
+    - group: cuckoo
+    - mode: 750
+    - create: False
+    - replace: False
+    - require:
+      - pkg: cuckoo_dependencies
+
+tcpdump_path:
+  cmd.run:
+    - name: >
+        export PATH=$PATH:/usr/sbin
+    - runas: {{ salt['pillar.get']('cuckoo:user', 'cuckoo') }}
+    - require:
+      - user: cuckoo_user
+{#
+tcpdump_path:
+  file.replace:
+    - name: /home/cuckoo/.profile
+    - pattern: "/.local/bin:"
+    - repl: "/.local/bin:/usr/sbin:"
+    - require:
+      - user: cuckoo_user
+#}
+supervisor_systemd:
+  file.replace:
+    - name: /lib/systemd/system/supervisor.service
+    - pattern: /usr/bin/
+    - repl: /usr/local/bin/
+    - require:
+      - pkg: cuckoo_dependencies
+
+supervisor:
+  service.running:
+    - enable: True
+    - require:
+      - pkg: cuckoo_dependencies
+      - file: supervisor_systemd
+{% endif %}
+
 cuckoo_setcap:
   cmd.run:
     - name: setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
